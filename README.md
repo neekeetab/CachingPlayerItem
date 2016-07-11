@@ -1,7 +1,7 @@
 # CachingPlayerItem
-Play and cache media content simultaneously on your iOS device
+Play and cache media content simultaneously on your iOS device.
 
-CachingPlayerItem is a subclass of AVPlayerItem. It allows you to play and cache media files simultaneously. You can start playback right away without waiting it to be downloaded completely. Once file is downloaded, you will be given an opportunity to store it for future use.
+CachingPlayerItem is a subclass of AVPlayerItem. It allows you to play and cache media files simultaneously. You can start to playback right away without waiting a file to be downloaded completely. Once it is downloaded, you will be given an opportunity to store it for future use.
 
 # Features
 - Written in Swift 2.2
@@ -9,11 +9,13 @@ CachingPlayerItem is a subclass of AVPlayerItem. It allows you to play and cache
 - CachingPlayerItem basically is a AVPlayerItem, but with custom loader. So you still have the power of AVFoundation Framework
 
 # Adding to your project
-Simply add CachingPlayerItem.swift to your project
+Simply add 'CachingPlayerItem.swift' to your project
 
 # Usage
 get a url to file you want to play:
+'''swift
 let songURL = NSURL(string: "https://example.com/audio.mp3")!
+'''
 
 instantiate CachingPlayerItem like so:
 let playerItem = CachingPlayerItem(url: songURL)
