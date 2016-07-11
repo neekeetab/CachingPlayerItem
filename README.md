@@ -1,5 +1,5 @@
 # CachingPlayerItem #
-### Play and cache media content simultaneously on your iOS device ###
+### Stream and cache media content on your iOS device ###
 
 CachingPlayerItem is a subclass of AVPlayerItem. It allows you to play and cache media files simultaneously. You can start to playback right away without waiting a file to be downloaded completely. Once it is downloaded, you will be given an opportunity to store it for future use.
 
@@ -28,8 +28,16 @@ play it:
 ```Swift
 player.play()
 ```
-
 **Note, that you need to keep strong reference to your player.**
+
+If you want to cache file without playing or to preload it for future playing, use `download()` method:
+```Swift
+playerItem = CachingPlayerItem(url: songURL)
+playerItem.download()
+```
+It's fine to start playштп the item while it's downloading.
+
+
 So, minimal code required to play remote audio looks like this:
 
 ```Swift
@@ -53,8 +61,6 @@ class ViewController: UIViewController {
 
 }
 ```
-
-**Note, that the playback may start with a delay. That's because some prebuffering is needed.**
 
 ## CachingPlayerItemDelegate protocol ##
 Usually, you want to conform to CachingPlayerItemDelegate protocol. It gives you 4 handy methods to implement:
