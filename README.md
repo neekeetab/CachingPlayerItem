@@ -24,7 +24,7 @@ instantiate player with `playerItem`:
 ```Swift
 player = AVPlayer(playerItem: playerItem)
 ```
-and play it:
+play it:
 ```Swift
 player.play()
 ```
@@ -73,7 +73,7 @@ optional func playerItemReadyToPlay(playerItem: CachingPlayerItem)
 optional func playerItemDidStopPlayback(playerItem: CachingPlayerItem)
 ```
 
-**Don't forget to set delegate property of the playerItem to self.** Notice, that all 4 methods are optional.
+**Don't forget to set `delegate` property of the playerItem to `self`.** Notice, that all 4 methods are optional.
 
 ## Demo ##
 ```Swift
