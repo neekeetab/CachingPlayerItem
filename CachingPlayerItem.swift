@@ -48,19 +48,21 @@ class CachingPlayerItem: AVPlayerItem {
         
         func resourceLoader(resourceLoader: AVAssetResourceLoader, shouldWaitForLoadingOfRequestedResource loadingRequest: AVAssetResourceLoadingRequest) -> Bool {
             if session == nil {
-                let interceptedURL = loadingRequest.request.URL!
-                let request = NSURLRequest(URL: interceptedURL.urlWithCustomScheme(owner!.scheme))
-                
-                let configuration = NSURLSessionConfiguration.defaultSessionConfiguration()
-                configuration.requestCachePolicy = .ReloadIgnoringLocalAndRemoteCacheData
-                session = NSURLSession(configuration: configuration, delegate: self, delegateQueue: nil)
-                let task = session?.dataTaskWithRequest(request)
-                task?.resume()
-                
+                let interceptedURL = loadingRequest.request.URL!.urlWithCustomScheme(owner!.scheme)
+                startDataRequest(withURL: interceptedURL)
             }
             pendingRequests.insert(loadingRequest)
             processPendingRequests()
             return true
+        }
+        
+        func startDataRequest(withURL url: NSURL) {
+            let request = NSURLRequest(URL: url)
+            let configuration = NSURLSessionConfiguration.defaultSessionConfiguration()
+            configuration.requestCachePolicy = .ReloadIgnoringLocalAndRemoteCacheData
+            session = NSURLSession(configuration: configuration, delegate: self, delegateQueue: nil)
+            let task = session?.dataTaskWithRequest(request)
+            task?.resume()
         }
         
         func resourceLoader(resourceLoader: AVAssetResourceLoader, didCancelLoadingRequest loadingRequest: AVAssetResourceLoadingRequest) {
@@ -145,11 +147,15 @@ class CachingPlayerItem: AVPlayerItem {
         
     }
     
-    var resourceLoaderDelegate = ResourceLoaderDelegate()
+    private var resourceLoaderDelegate = ResourceLoaderDelegate()
+    private let scheme: String!
+    private var url: NSURL!
+    
     var delegate: CachingPlayerItemDelegate?
-    let scheme: String!
     
     init(url: NSURL) {
+        
+        self.url = url
         
         let components = NSURLComponents(URL: url, resolvingAgainstBaseURL: false)!
         scheme = components.scheme
@@ -163,6 +169,10 @@ class CachingPlayerItem: AVPlayerItem {
         
         NSNotificationCenter.defaultCenter().addObserver(self, selector: #selector(didStop), name:AVPlayerItemPlaybackStalledNotification, object: self)
         
+    }
+    
+    func download() {
+        resourceLoaderDelegate.startDataRequest(withURL: url)
     }
     
     override init(asset: AVAsset, automaticallyLoadedAssetKeys: [String]?) {
