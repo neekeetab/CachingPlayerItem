@@ -13,14 +13,14 @@ Simply add `CachingPlayerItem.swift` to your project
 
 ## Usage ##
 get a url to file you want to play:
-```Swift
+```Swiftf
 let songURL = NSURL(string: "https://example.com/audio.mp3")!
 ```
 instantiate CachingPlayerItem:
 ```Swift
 let playerItem = CachingPlayerItem(url: songURL)
 ```
-instantiate player with `playerItem`:
+instantiate player with playerItem:
 ```Swift
 player = AVPlayer(playerItem: playerItem)
 ```
@@ -35,7 +35,7 @@ If you want to cache file without playing or to preload it for future playing, u
 playerItem = CachingPlayerItem(url: songURL)
 playerItem.download()
 ```
-It's fine to start playштп the item while it's downloading.
+It's fine to start playing the item while it's downloading.
 
 
 So, minimal code required to play remote audio looks like this:
