@@ -10,7 +10,7 @@ import AVFoundation
 
 @objc protocol CachingPlayerItemDelegate {
     
-    // called when file is fully loaded
+    // called when file is fully downloaded
     optional func playerItem(playerItem: CachingPlayerItem, didFinishLoadingData data: NSData)
     
     // called every time new portion of data is received
@@ -47,22 +47,28 @@ class CachingPlayerItem: AVPlayerItem {
         //MARK: AVAssetResourceLoader delegate
         
         func resourceLoader(resourceLoader: AVAssetResourceLoader, shouldWaitForLoadingOfRequestedResource loadingRequest: AVAssetResourceLoadingRequest) -> Bool {
+            
             if session == nil {
                 let interceptedURL = loadingRequest.request.URL!.urlWithCustomScheme(owner!.scheme)
                 startDataRequest(withURL: interceptedURL)
             }
+            
             pendingRequests.insert(loadingRequest)
             processPendingRequests()
             return true
         }
         
         func startDataRequest(withURL url: NSURL) {
-            let request = NSURLRequest(URL: url)
-            let configuration = NSURLSessionConfiguration.defaultSessionConfiguration()
-            configuration.requestCachePolicy = .ReloadIgnoringLocalAndRemoteCacheData
-            session = NSURLSession(configuration: configuration, delegate: self, delegateQueue: nil)
-            let task = session?.dataTaskWithRequest(request)
-            task?.resume()
+            if session == nil {
+                let request = NSURLRequest(URL: url)
+                let configuration = NSURLSessionConfiguration.defaultSessionConfiguration()
+                configuration.requestCachePolicy = .ReloadIgnoringLocalAndRemoteCacheData
+                session = NSURLSession(configuration: configuration, delegate: self, delegateQueue: nil)
+                let task = session?.dataTaskWithRequest(request)
+                task?.resume()
+            } else {
+                print("Call of download() had no effect. File is already downloading.")
+            }
         }
         
         func resourceLoader(resourceLoader: AVAssetResourceLoader, didCancelLoadingRequest loadingRequest: AVAssetResourceLoadingRequest) {
