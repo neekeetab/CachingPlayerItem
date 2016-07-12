@@ -30,7 +30,7 @@ player.play()
 ```
 **Note, that you need to keep strong reference to your player.**
 
-If you want to cache file without playing or to preload it for future playing, use `download()` method:
+If you want to cache file without playing, or to preload it for future playing, use `download()` method:
 ```Swift
 playerItem = CachingPlayerItem(url: songURL)
 playerItem.download()
@@ -66,7 +66,7 @@ class ViewController: UIViewController {
 Usually, you want to conform to CachingPlayerItemDelegate protocol. It gives you 4 handy methods to implement:
 
 ```Swift
-// called when file is fully loaded
+// called when file is fully dowloaded
 optional func playerItem(playerItem: CachingPlayerItem, didFinishLoadingData data: NSData)
     
 // called every time new portion of data is received
