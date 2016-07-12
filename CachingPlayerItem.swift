@@ -59,16 +59,12 @@ class CachingPlayerItem: AVPlayerItem {
         }
         
         func startDataRequest(withURL url: NSURL) {
-            if session == nil {
-                let request = NSURLRequest(URL: url)
-                let configuration = NSURLSessionConfiguration.defaultSessionConfiguration()
-                configuration.requestCachePolicy = .ReloadIgnoringLocalAndRemoteCacheData
-                session = NSURLSession(configuration: configuration, delegate: self, delegateQueue: nil)
-                let task = session?.dataTaskWithRequest(request)
-                task?.resume()
-            } else {
-                print("Call of download() had no effect. File is already downloading.")
-            }
+            let request = NSURLRequest(URL: url)
+            let configuration = NSURLSessionConfiguration.defaultSessionConfiguration()
+            configuration.requestCachePolicy = .ReloadIgnoringLocalAndRemoteCacheData
+            session = NSURLSession(configuration: configuration, delegate: self, delegateQueue: nil)
+            let task = session?.dataTaskWithRequest(request)
+            task?.resume()
         }
         
         func resourceLoader(resourceLoader: AVAssetResourceLoader, didCancelLoadingRequest loadingRequest: AVAssetResourceLoadingRequest) {
@@ -178,7 +174,9 @@ class CachingPlayerItem: AVPlayerItem {
     }
     
     func download() {
-        resourceLoaderDelegate.startDataRequest(withURL: url)
+        if resourceLoaderDelegate.session == nil {
+            resourceLoaderDelegate.startDataRequest(withURL: url)
+        }
     }
     
     override init(asset: AVAsset, automaticallyLoadedAssetKeys: [String]?) {
