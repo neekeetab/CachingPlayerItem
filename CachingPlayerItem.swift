@@ -11,10 +11,10 @@ import AVFoundation
 @objc protocol CachingPlayerItemDelegate {
     
     // called when file is fully downloaded
-    optional func playerItem(playerItem: CachingPlayerItem, didFinishLoadingData data: NSData)
+    optional func playerItem(playerItem: CachingPlayerItem, didFinishDownloadingData data: NSData)
     
     // called every time new portion of data is received
-    optional func playerItem(playerItem: CachingPlayerItem, didLoadBytesSoFar bytesLoaded: Int, outOf bytesExpected: Int)
+    optional func playerItem(playerItem: CachingPlayerItem, didDownloadBytesSoFar bytesDownloaded: Int, outOf bytesExpected: Int)
     
     // called after prebuffering is finished, so player item is ready to play. Called only once, after initial prebuffering
     optional func playerItemReadyToPlay(playerItem: CachingPlayerItem)
@@ -38,8 +38,11 @@ class CachingPlayerItem: AVPlayerItem {
     
     class ResourceLoaderDelegate: NSObject, AVAssetResourceLoaderDelegate, NSURLSessionDelegate, NSURLSessionDataDelegate, NSURLSessionTaskDelegate {
         
+        var playingFromCache = false
+        var mimeType: String? // is used if we play from cache (with NSData)
+        
         var session: NSURLSession?
-        var songData: NSMutableData?
+        var songData: NSData?
         var response: NSURLResponse?
         var pendingRequests = Set<AVAssetResourceLoadingRequest>()
         weak var owner: CachingPlayerItem?
@@ -48,8 +51,10 @@ class CachingPlayerItem: AVPlayerItem {
         
         func resourceLoader(resourceLoader: AVAssetResourceLoader, shouldWaitForLoadingOfRequestedResource loadingRequest: AVAssetResourceLoadingRequest) -> Bool {
             
-            if session == nil {
-                let interceptedURL = loadingRequest.request.URL!.urlWithCustomScheme(owner!.scheme)
+            if playingFromCache { // if we're playing from cache
+                // nothing to do here
+            } else if session == nil { // if we're playing from url, we need to download the file
+                let interceptedURL = loadingRequest.request.URL!.urlWithCustomScheme(owner!.scheme!)
                 startDataRequest(withURL: interceptedURL)
             }
             
@@ -70,13 +75,13 @@ class CachingPlayerItem: AVPlayerItem {
         func resourceLoader(resourceLoader: AVAssetResourceLoader, didCancelLoadingRequest loadingRequest: AVAssetResourceLoadingRequest) {
             pendingRequests.remove(loadingRequest)
         }
-
+        
         //MARK: NSURLSession delegate
         
         func URLSession(session: NSURLSession, dataTask: NSURLSessionDataTask, didReceiveData data: NSData) {
-            songData?.appendData(data)
+            (songData as! NSMutableData).appendData(data)
             processPendingRequests()
-            owner?.delegate?.playerItem?(owner!, didLoadBytesSoFar: songData!.length, outOf: Int(dataTask.countOfBytesExpectedToReceive))
+            owner?.delegate?.playerItem?(owner!, didDownloadBytesSoFar: songData!.length, outOf: Int(dataTask.countOfBytesExpectedToReceive))
         }
         
         func URLSession(session: NSURLSession, dataTask: NSURLSessionDataTask, didReceiveResponse response: NSURLResponse, completionHandler: (NSURLSessionResponseDisposition) -> Void) {
@@ -92,7 +97,7 @@ class CachingPlayerItem: AVPlayerItem {
                 return
             }
             processPendingRequests()
-            owner?.delegate?.playerItem?(owner!, didFinishLoadingData: songData!)
+            owner?.delegate?.playerItem?(owner!, didFinishDownloadingData: songData!)
         }
         
         //MARK:
@@ -113,15 +118,23 @@ class CachingPlayerItem: AVPlayerItem {
         }
         
         func fillInContentInforation(contentInformationRequest: AVAssetResourceLoadingContentInformationRequest?) {
-            
-            if contentInformationRequest == nil || response == nil {
+            // if we play from cache we make no url requests, therefore we have no responses, so we need to fill in contentInformationRequest manually
+            if playingFromCache {
+                contentInformationRequest?.contentType = self.mimeType
+                contentInformationRequest?.contentLength = Int64(songData!.length)
+                contentInformationRequest?.byteRangeAccessSupported = true
+                return
+            }
+        
+            // have no response from the server yet
+            if  response == nil {
                 return
             }
             
             let mimeType = response?.MIMEType
-            contentInformationRequest!.contentType = mimeType
-            contentInformationRequest!.contentLength = response!.expectedContentLength
-            contentInformationRequest!.byteRangeAccessSupported = true
+            contentInformationRequest?.contentType = mimeType
+            contentInformationRequest?.contentLength = response!.expectedContentLength
+            contentInformationRequest?.byteRangeAccessSupported = true
         }
         
         func respondWithDataForRequest(dataRequest: AVAssetResourceLoadingDataRequest) -> Bool {
@@ -129,7 +142,7 @@ class CachingPlayerItem: AVPlayerItem {
             let requestedOffset = Int(dataRequest.requestedOffset)
             let requestedLength = dataRequest.requestedLength
             let startOffset = Int(dataRequest.currentOffset)
-        
+            
             // Don't have any data at all for this request
             if songData == nil || songData!.length < startOffset {
                 return false
@@ -154,11 +167,12 @@ class CachingPlayerItem: AVPlayerItem {
     }
     
     private var resourceLoaderDelegate = ResourceLoaderDelegate()
-    private let scheme: String!
+    private var scheme: String?
     private var url: NSURL!
     
     var delegate: CachingPlayerItemDelegate?
     
+    // use this initializer to play remote files
     init(url: NSURL) {
         
         self.url = url
@@ -166,8 +180,29 @@ class CachingPlayerItem: AVPlayerItem {
         let components = NSURLComponents(URL: url, resolvingAgainstBaseURL: false)!
         scheme = components.scheme
         
-        let asset = AVURLAsset(URL: url.urlWithCustomScheme("streaming"))
+        let asset = AVURLAsset(URL: url.urlWithCustomScheme("whatever"))
         asset.resourceLoader.setDelegate(resourceLoaderDelegate, queue: dispatch_get_main_queue())
+        super.init(asset: asset, automaticallyLoadedAssetKeys: nil)
+        resourceLoaderDelegate.owner = self
+        
+        self.addObserver(self, forKeyPath: "status", options: NSKeyValueObservingOptions.New, context: nil)
+        
+        NSNotificationCenter.defaultCenter().addObserver(self, selector: #selector(didStop), name:AVPlayerItemPlaybackStalledNotification, object: self)
+        
+    }
+    
+    // use this initializer to play local files
+    init(data: NSData, mimeType: String, fileExtension: String) {
+        
+        self.url = NSURL(string: "whatever://whatever/file.\(fileExtension)")
+    
+        resourceLoaderDelegate.songData = data
+        resourceLoaderDelegate.playingFromCache = true
+        resourceLoaderDelegate.mimeType = mimeType
+        
+        let asset = AVURLAsset(URL: url)
+        asset.resourceLoader.setDelegate(resourceLoaderDelegate, queue: dispatch_get_main_queue())
+        
         super.init(asset: asset, automaticallyLoadedAssetKeys: nil)
         resourceLoaderDelegate.owner = self
         
