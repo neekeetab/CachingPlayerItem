@@ -147,6 +147,10 @@ class CachingPlayerItem: AVPlayerItem {
             
         }
         
+        deinit {
+            session?.invalidateAndCancel()
+        }
+        
     }
     
     private var resourceLoaderDelegate = ResourceLoaderDelegate()
@@ -191,6 +195,13 @@ class CachingPlayerItem: AVPlayerItem {
     
     func didStop() {
         delegate?.playerItemDidStopPlayback?(self)
+    }
+    
+    //MARK: deinit
+    deinit {
+        NSNotificationCenter.defaultCenter().removeObserver(self)
+        removeObserver(self, forKeyPath: "status")
+        resourceLoaderDelegate.session?.invalidateAndCancel()
     }
     
 }
