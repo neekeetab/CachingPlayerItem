@@ -1,30 +1,37 @@
 # CachingPlayerItem #
 ### Stream and cache media content on your iOS device ###
 
-CachingPlayerItem is a subclass of AVPlayerItem. It allows you to play and cache media files. You can start to play a remote file immediately, without waiting the file to be downloaded completely. Once it is downloaded, you will be given an opportunity to store it for future use.
+CachingPlayerItem is a subclass of AVPlayerItem. It allows you to play and cache media files. You can start to play a remote file immediately, without waiting the file to be downloaded completely. Once it is downloaded, you will be given an opportunity to store it for future use. You can play NSData objects also. 
 
 ## Features ##
 - Written in Swift 2.2
 - Convenient notifications through a delegate mechanism
+- Both local and remote files are supported. You can play NSData objects straight from the memory.
 - CachingPlayerItem is a subclass of AVPlayerItem, but with a custom loader. So you still have the power of AVFoundation Framework
 
 ## Adding to your project ##
 Simply add `CachingPlayerItem.swift` to your project
 
 ## Usage ##
-get a url to file you want to play:
+Get a url to file you want to play:
 ```Swiftf
 let songURL = NSURL(string: "https://example.com/audio.mp3")!
 ```
-instantiate CachingPlayerItem:
+Instantiate CachingPlayerItem:
 ```Swift
 let playerItem = CachingPlayerItem(url: songURL)
 ```
-instantiate player with the playerItem:
+Alternatively, you may want to play from NSData object. In this case, use the following CachingPlayerItem initializer:
+```Swift
+init(data: NSData, mimeType: String, fileExtension: String)
+```
+for mp3 files, the mimeType is "audio/mpeg". For other types, use google.
+
+Instantiate player with the playerItem:
 ```Swift
 player = AVPlayer(playerItem: playerItem)
 ```
-play it:
+Play it:
 ```Swift
 player.play()
 ```
@@ -67,10 +74,10 @@ Usually, you want to conform to the CachingPlayerItemDelegate protocol. It gives
 
 ```Swift
 // called when file is fully dowloaded
-optional func playerItem(playerItem: CachingPlayerItem, didFinishLoadingData data: NSData)
+optional func playerItem(playerItem: CachingPlayerItem, didFinishDownloadingData data: NSData)
     
 // called every time new portion of data is received
-optional func playerItem(playerItem: CachingPlayerItem, didLoadBytesSoFar bytesLoaded: Int, outOf bytesExpected: Int)
+optional func playerItem(playerItem: CachingPlayerItem, didDownloadBytesSoFar bytesDownloaded: Int, outOf bytesExpected: Int)
     
 // called after prebuffering is finished, so player item is ready to play. Called only once, after initial prebuffering
 optional func playerItemReadyToPlay(playerItem: CachingPlayerItem)
@@ -107,12 +114,12 @@ class ViewController: UIViewController, CachingPlayerItemDelegate {
         player.play()
     }
     
-    func playerItem(playerItem: CachingPlayerItem, didFinishLoadingData data: NSData) {
+    func playerItem(playerItem: CachingPlayerItem, didFinishDownoadingData data: NSData) {
         print("File is downloaded and ready for storing")
     }
     
-    func playerItem(playerItem: CachingPlayerItem, didLoadBytesSoFar bytesLoaded: Int, outOf bytesExpected: Int) {
-        print("Loaded so far: \(bytesLoaded) out of \(bytesExpected)")
+    func playerItem(playerItem: CachingPlayerItem, didDownloadBytesSoFar bytesDownloaded: Int, outOf bytesExpected: Int) {
+        print("Loaded so far: \(bytesDownloaded) out of \(bytesExpected)")
     }
     
     override func didReceiveMemoryWarning() {
@@ -124,5 +131,5 @@ class ViewController: UIViewController, CachingPlayerItemDelegate {
 ```
 
 ## Known limitations ##
-- CachingPlayerItem loads its content sequentially. If you seek to yet not loaded portion, it waits until data previous to this position is loaded, and only then starts playback.
+- CachingPlayerItem loads its content sequentially. If you seek to yet not downloaded portion, it waits until data previous to this position is downloaded, and only then starts playback.
 - Downloaded data is stored completely in RAM, therefore you're restricted by device's memory. Despite CachingPlayerItem is very handy for relatively small audio files (up to 100MB), you may have memory-related problems with large video files.
