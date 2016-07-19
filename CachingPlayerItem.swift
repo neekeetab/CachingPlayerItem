@@ -125,7 +125,7 @@ class CachingPlayerItem: AVPlayerItem {
                 contentInformationRequest?.byteRangeAccessSupported = true
                 return
             }
-        
+            
             // have no response from the server yet
             if  response == nil {
                 return
@@ -170,7 +170,7 @@ class CachingPlayerItem: AVPlayerItem {
     private var scheme: String?
     private var url: NSURL!
     
-    var delegate: CachingPlayerItemDelegate?
+    weak var delegate: CachingPlayerItemDelegate?
     
     // use this initializer to play remote files
     init(url: NSURL) {
@@ -195,7 +195,7 @@ class CachingPlayerItem: AVPlayerItem {
     init(data: NSData, mimeType: String, fileExtension: String) {
         
         self.url = NSURL(string: "whatever://whatever/file.\(fileExtension)")
-    
+        
         resourceLoaderDelegate.songData = data
         resourceLoaderDelegate.playingFromCache = true
         resourceLoaderDelegate.mimeType = mimeType
