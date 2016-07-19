@@ -187,7 +187,7 @@ class CachingPlayerItem: AVPlayerItem {
         
         self.addObserver(self, forKeyPath: "status", options: NSKeyValueObservingOptions.New, context: nil)
         
-        NSNotificationCenter.defaultCenter().addObserver(self, selector: #selector(didStop), name:AVPlayerItemPlaybackStalledNotification, object: self)
+        NSNotificationCenter.defaultCenter().addObserver(self, selector: #selector(didStopHandler), name:AVPlayerItemPlaybackStalledNotification, object: self)
         
     }
     
