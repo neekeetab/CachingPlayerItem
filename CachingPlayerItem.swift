@@ -22,6 +22,9 @@ import AVFoundation
     // called when some media did not arrive in time to continue playback
     optional func playerItemDidStopPlayback(playerItem: CachingPlayerItem)
     
+    // called when deinit
+    optional func playerItemWillDeinit(playerItem: CachingPlayerItem)
+    
 }
 
 extension NSURL {
@@ -93,7 +96,7 @@ class CachingPlayerItem: AVPlayerItem {
         
         func URLSession(session: NSURLSession, task: NSURLSessionTask, didCompleteWithError error: NSError?) {
             if error != nil {
-                print(error)
+                //                print(error)
                 return
             }
             processPendingRequests()
@@ -222,23 +225,25 @@ class CachingPlayerItem: AVPlayerItem {
         fatalError("not implemented")
     }
     
-    //MARK: KVO
+    // MARK: KVO
     
     override func observeValueForKeyPath(keyPath: String?, ofObject object: AnyObject?, change: [String : AnyObject]?, context: UnsafeMutablePointer<Void>) {
         delegate?.playerItemReadyToPlay?(self)
     }
     
-    //MARK: Notifications hanlers
+    // MARK: Notification hanlers
     
     func didStopHandler() {
         delegate?.playerItemDidStopPlayback?(self)
     }
     
-    //MARK: deinit
+    // MARK:
+    
     deinit {
         NSNotificationCenter.defaultCenter().removeObserver(self)
         removeObserver(self, forKeyPath: "status")
         resourceLoaderDelegate.session?.invalidateAndCancel()
+        delegate?.playerItemWillDeinit?(self)
     }
     
 }
