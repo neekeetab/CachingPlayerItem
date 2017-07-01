@@ -185,7 +185,7 @@ class CachingPlayerItem: AVPlayerItem {
         let components = URLComponents(url: url, resolvingAgainstBaseURL: false)!
         scheme = components.scheme
         
-        let asset = AVURLAsset(url: url.urlWithCustomScheme(scheme: "whatever"))
+        let asset = AVURLAsset(url: url)
         asset.resourceLoader.setDelegate(resourceLoaderDelegate, queue: DispatchQueue.main)
         super.init(asset: asset, automaticallyLoadedAssetKeys: nil)
         resourceLoaderDelegate.owner = self
