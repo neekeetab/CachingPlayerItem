@@ -14,7 +14,7 @@ Simply add `CachingPlayerItem.swift` to your project.
 
 ## Usage ##
 Get a url to file you want to play:
-```Swiftf
+```Swift
 let url = URL(string: "https://example.com/audio.mp3")!
 ```
 Instantiate CachingPlayerItem:
@@ -39,10 +39,10 @@ player.play()
 
 If you want to cache a file without playing it, or to preload it for future playing, use `download()` method:
 ```Swift
-playerItem = CachingPlayerItem(url: songURL)
+let playerItem = CachingPlayerItem(url: songURL)
 playerItem.download()
 ```
-It's fine to start playing the item while it's downloading.
+It's fine to start playing the item while it's being downloaded.
 
 **Note: It's strongly recommended to set AVPlayer's property `automaticallyWaitsToMinimizeStalling` to `false`. Not doing so can lead to poor startup times for playback and poor recovery from stalls.**
 
