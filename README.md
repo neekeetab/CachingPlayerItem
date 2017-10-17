@@ -111,7 +111,7 @@ class ViewController: UIViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
      
-        let url = URL(string: "http://www.sample-videos.com/audio/mp3/crowd-cheering.mp3")!
+        let url = URL(string: "http://www.hochmuth.com/mp3/Tchaikovsky_Nocturne__orch.mp3")!
         let playerItem = CachingPlayerItem(url: url)
         playerItem.delegate = self        
         player = AVPlayer(playerItem: playerItem)
