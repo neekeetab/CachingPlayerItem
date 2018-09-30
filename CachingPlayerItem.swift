@@ -54,14 +54,11 @@ open class CachingPlayerItem: AVPlayerItem {
                 
                 // If we're playing from a url, we need to download the file.
                 // We start loading the file on first request only.
-                guard let interceptedUrl = loadingRequest.request.url,
-                    let initialScheme = owner?.initialScheme,
-                    let initialUrl = interceptedUrl.withScheme(initialScheme) else {
+                guard let initialUrl = owner?.url else {
                     fatalError("internal inconsistency")
                 }
-                
+
                 startDataRequest(with: initialUrl)
-                
             }
             
             pendingRequests.insert(loadingRequest)
@@ -110,7 +107,7 @@ open class CachingPlayerItem: AVPlayerItem {
         func processPendingRequests() {
             
             // get all fullfilled requests
-            let requestsFulfilled = Set<AVAssetResourceLoadingRequest>(pendingRequests.flatMap {
+            let requestsFulfilled = Set<AVAssetResourceLoadingRequest>(pendingRequests.compactMap {
                 self.fillInContentInformationRequest($0.contentInformationRequest)
                 if self.haveEnoughDataToFulfillRequest($0.dataRequest!) {
                     $0.finishLoading()
@@ -174,6 +171,7 @@ open class CachingPlayerItem: AVPlayerItem {
     fileprivate let resourceLoaderDelegate = ResourceLoaderDelegate()
     fileprivate let url: URL
     fileprivate let initialScheme: String?
+    fileprivate var customFileExtension: String?
     
     weak var delegate: CachingPlayerItemDelegate?
     
@@ -186,16 +184,28 @@ open class CachingPlayerItem: AVPlayerItem {
     private let cachingPlayerItemScheme = "cachingPlayerItemScheme"
     
     /// Is used for playing remote files.
-    init(url: URL) {
+    convenience init(url: URL) {
+        self.init(url: url, customFileExtension: nil)
+    }
+    
+    /// Override/append custom file extension to URL path.
+    /// This is required for the player to work correctly with the intended file type.
+    init(url: URL, customFileExtension: String?) {
         
         guard let components = URLComponents(url: url, resolvingAgainstBaseURL: false),
             let scheme = components.scheme,
-            let urlWithCustomScheme = url.withScheme(cachingPlayerItemScheme) else {
+            var urlWithCustomScheme = url.withScheme(cachingPlayerItemScheme) else {
             fatalError("Urls without a scheme are not supported")
         }
         
         self.url = url
         self.initialScheme = scheme
+        
+        if let ext = customFileExtension {
+            urlWithCustomScheme.deletePathExtension()
+            urlWithCustomScheme.appendPathExtension(ext)
+            self.customFileExtension = ext
+        }
         
         let asset = AVURLAsset(url: urlWithCustomScheme)
         asset.resourceLoader.setDelegate(resourceLoaderDelegate, queue: DispatchQueue.main)

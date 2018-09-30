@@ -146,3 +146,4 @@ extension ViewController: CachingPlayerItemDelegate {
 ## Known limitations ##
 - CachingPlayerItem loads its content sequentially. If you seek to yet not downloaded portion, it waits until data previous to this position is downloaded, and only then starts the playback.
 - Downloaded data is stored completely in RAM, therefore you're restricted by device's memory. Despite CachingPlayerItem is very handy for relatively small audio files (up to 100MB), you may have memory-related problems with large video files.
+- URL's must contain a file extension for the player to load properly. To get around this a custom file extension can be specified e.g. `let playerItem = CachingPlayerItem(url: url, customFileExtension: "mp3")`.
