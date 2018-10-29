@@ -39,10 +39,15 @@ open class CachingPlayerItem: AVPlayerItem {
         var playingFromData = false
         var mimeType: String? // is required when playing from Data
         var session: URLSession?
+        let urlSessionConfiguration: URLSessionConfiguration
         var mediaData: Data?
         var response: URLResponse?
         var pendingRequests = Set<AVAssetResourceLoadingRequest>()
         weak var owner: CachingPlayerItem?
+        
+        init(urlSessionConfiguration: URLSessionConfiguration = URLSessionConfiguration.default) {
+            self.urlSessionConfiguration = urlSessionConfiguration
+        }
         
         func resourceLoader(_ resourceLoader: AVAssetResourceLoader, shouldWaitForLoadingOfRequestedResource loadingRequest: AVAssetResourceLoadingRequest) -> Bool {
             
@@ -68,9 +73,9 @@ open class CachingPlayerItem: AVPlayerItem {
         }
         
         func startDataRequest(with url: URL) {
-            let configuration = URLSessionConfiguration.default
-            configuration.requestCachePolicy = .reloadIgnoringLocalAndRemoteCacheData
-            session = URLSession(configuration: configuration, delegate: self, delegateQueue: nil)
+            if session == nil {
+                session = URLSession(configuration: urlSessionConfiguration, delegate: self, delegateQueue: nil)
+            }
             session?.dataTask(with: url).resume()
         }
         
@@ -97,6 +102,12 @@ open class CachingPlayerItem: AVPlayerItem {
             if let errorUnwrapped = error {
                 owner?.delegate?.playerItem?(owner!, downloadingFailedWith: errorUnwrapped)
                 return
+            }
+            if let response = response,
+                let mediaData = mediaData,
+                let task = task as? URLSessionDataTask {
+                let cachedUrlResponse = CachedURLResponse(response: response, data: mediaData, userInfo: nil, storagePolicy: .allowed)
+                session.configuration.urlCache?.storeCachedResponse(cachedUrlResponse, for: task)
             }
             processPendingRequests()
             owner?.delegate?.playerItem?(owner!, didFinishDownloadingData: mediaData!)
