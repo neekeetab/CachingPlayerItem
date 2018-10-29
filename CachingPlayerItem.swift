@@ -179,7 +179,7 @@ open class CachingPlayerItem: AVPlayerItem {
         
     }
     
-    fileprivate let resourceLoaderDelegate = ResourceLoaderDelegate()
+    fileprivate let resourceLoaderDelegate: ResourceLoaderDelegate
     fileprivate let url: URL
     fileprivate let initialScheme: String?
     fileprivate var customFileExtension: String?
@@ -195,13 +195,13 @@ open class CachingPlayerItem: AVPlayerItem {
     private let cachingPlayerItemScheme = "cachingPlayerItemScheme"
     
     /// Is used for playing remote files.
-    convenience init(url: URL) {
-        self.init(url: url, customFileExtension: nil)
+    convenience init(url: URL, urlSessionConfiguration: URLSessionConfiguration = URLSessionConfiguration.default) {
+        self.init(url: url, customFileExtension: nil, urlSessionConfiguration: urlSessionConfiguration)
     }
     
     /// Override/append custom file extension to URL path.
     /// This is required for the player to work correctly with the intended file type.
-    init(url: URL, customFileExtension: String?) {
+    init(url: URL, customFileExtension: String?, urlSessionConfiguration: URLSessionConfiguration = URLSessionConfiguration.default) {
         
         guard let components = URLComponents(url: url, resolvingAgainstBaseURL: false),
             let scheme = components.scheme,
@@ -217,6 +217,8 @@ open class CachingPlayerItem: AVPlayerItem {
             urlWithCustomScheme.appendPathExtension(ext)
             self.customFileExtension = ext
         }
+        
+        self.resourceLoaderDelegate = ResourceLoaderDelegate(urlSessionConfiguration: urlSessionConfiguration)
         
         let asset = AVURLAsset(url: urlWithCustomScheme)
         asset.resourceLoader.setDelegate(resourceLoaderDelegate, queue: DispatchQueue.main)
@@ -240,6 +242,7 @@ open class CachingPlayerItem: AVPlayerItem {
         self.url = fakeUrl
         self.initialScheme = nil
         
+        resourceLoaderDelegate = ResourceLoaderDelegate()
         resourceLoaderDelegate.mediaData = data
         resourceLoaderDelegate.playingFromData = true
         resourceLoaderDelegate.mimeType = mimeType
