@@ -1,10 +1,10 @@
 # CachingPlayerItem #
 ### Stream and cache media content on your iOS device ###
 
-CachingPlayerItem is a subclass of AVPlayerItem. It allows you to play and cache audio and video files without having to download them twice. You can start to play a remote file immediately, without waiting it to be downloaded completely. Once it is downloaded, you will be given an opportunity to store it for future use. 
+CachingPlayerItem is a subclass of AVPlayerItem. It allows you to play and cache audio and video files without having to download them twice. You can start playing a remote file immediately, without waiting it to be downloaded completely. Once it is downloaded, you will be given an opportunity to store it for future use. 
 
 ## Features ##
-- Works with both Swift 4.0 and 3.2
+- Works with both Swift 4 and 3.
 - Playing of both local and remote files is supported. You can also play previously cached files as Data objects straight from the memory.
 - Convenient notifications through a delegate mechanism.
 - CachingPlayerItem is a subclass of AVPlayerItem with a custom loader. So you still have the power of AVFoundation Framework: for most situations you can treat CachingPayerItem as AVPlayerItem.
@@ -25,7 +25,7 @@ Alternatively, you may want to play from a Data object. In this case, use the fo
 ```Swift
 init(data: Data, mimeType: String, fileExtension: String)
 ```
-for mp3 files, the mimeType is "audio/mpeg". For other types, use google.
+For mp3 files, the mimeType is "audio/mpeg". Search for other types. 
 
 Instantiate AVPlayer with the playerItem:
 ```Swift
@@ -44,10 +44,10 @@ playerItem.download()
 ```
 It's fine to start playing the item while it's being downloaded.
 
-**Note: It's strongly recommended to set AVPlayer's property `automaticallyWaitsToMinimizeStalling` to `false`. Not doing so can lead to poor startup times for playback and poor recovery from stalls.**
+**From Apple docs: It's strongly recommended to set AVPlayer's property `automaticallyWaitsToMinimizeStalling` to `false`. Not doing so can lead to poor startup times for playback and poor recovery from stalls.**
 
 
-So, minimal code required to play a remote audio looks like this:
+Thus, minimal code required to play a remote audio looks like this:
 
 ```Swift
 import UIKit
@@ -97,7 +97,7 @@ Usually, you want to conform to the CachingPlayerItemDelegate protocol. It gives
 }
 ```
 
-**Don't forget to set `delegate` property of the playerItem to `self`.** Notice, that all of the methods are optional.
+**Don't forget to set `delegate` property of the playerItem (e.g. to `self`).** Notice, that all of the methods are optional.
 
 ## Demo ##
 ```Swift
@@ -147,3 +147,4 @@ extension ViewController: CachingPlayerItemDelegate {
 - CachingPlayerItem loads its content sequentially. If you seek to yet not downloaded portion, it waits until data previous to this position is downloaded, and only then starts the playback.
 - Downloaded data is stored completely in RAM, therefore you're restricted by device's memory. Despite CachingPlayerItem is very handy for relatively small audio files (up to 100MB), you may have memory-related problems with large video files.
 - URL's must contain a file extension for the player to load properly. To get around this a custom file extension can be specified e.g. `let playerItem = CachingPlayerItem(url: url, customFileExtension: "mp3")`.
+- CachingPlayerItem may not work as expected on simulators. If you experience any issues, try running on a device. 
