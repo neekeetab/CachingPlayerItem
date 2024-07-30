@@ -145,7 +145,10 @@ open class CachingPlayerItem: AVPlayerItem {
         func haveEnoughDataToFulfillRequest(_ dataRequest: AVAssetResourceLoadingDataRequest) -> Bool {
             
             let requestedOffset = Int(dataRequest.requestedOffset)
-            let requestedLength = dataRequest.requestedLength
+            let requestedLength: Int = {
+                guard let expectedContentLength = response?.expectedContentLength else { return dataRequest.requestedLength }
+                return Int(expectedContentLength)
+            }()
             let currentOffset = Int(dataRequest.currentOffset)
             
             guard let songDataUnwrapped = mediaData,
